@@ -1,35 +1,6 @@
-# score is the number of 9-height positions reachable from that trailhead via a hiking trail
+library("tidyverse")
 input <- readLines("inputs/day10_input.txt")
-input <- c(
-  "89010123",
-  "78121874",
-  "87430965",
-  "96549874",
-  "45678903",
-  "32019012",
-  "01329801",
-  "10456732"
-)
-# 
-# input <- c(
-#   "...0...",
-#   "...1...",
-#   "...2...",
-#   "6543456",
-#   "7.....7",
-#   "8.....8",
-#   "9.....9"
-# )
-# 
-# input <- c(
-#   "..90..9",
-#  "...1.98",
-#   "...2..7",
-#   "6543456",
-#   "765.987",
-#   "876....",
-#   "987...."
-# )
+
 ncols <- nchar(input[1])
 nrows <- length(input)
 
@@ -72,11 +43,14 @@ get_next <- function(x, y, val, full_grid){
   
 }
 
-travel <- function(trailhead, gridded){
+travel <- function(trailhead, gridded, part){
   queue <- matrix(c(trailhead, 0), ncol = 3, dimnames = list(NULL, c("row", "col", "val")))
   finished <- 0
   while(nrow(queue) > 0){
-    #queue <- unique(queue) #comment out for part 1 lol
+    if(part == 1){
+      queue <- unique(queue) 
+    }
+    trail <- queue[1,] 
     
     if(trail[3] == 9){
       finished <- finished + 1
@@ -90,10 +64,16 @@ travel <- function(trailhead, gridded){
   return(finished)
 }
 
+
 map((1:nrow(trailheads)), \(i){
-  travel(trailheads[i,], gridded)
+  travel(trailheads[i,], gridded, 1)
 })%>% 
   unlist() %>% 
   sum()
 
+map((1:nrow(trailheads)), \(i){
+  travel(trailheads[i,], gridded, 2)
+})%>% 
+  unlist() %>% 
+  sum()
 
