@@ -15,7 +15,7 @@ parse_disk_map <- function(disk_map){
   
   i <- 0
   map2(files, free, function(x, y){
-    out <- c(rep(i, x), rep(".", y))
+    out <- c(rep(i, x), rep(NA, y))
     i <<- i + 1
     return(out)
   }) 
@@ -25,16 +25,16 @@ move_blocks <- function(disk_map){
   j <- length(disk_map)
   for(i in 1:length(disk_map)){
     if(i > j) break
-    to_replace <- which(disk_map[[i]] == ".")
+    to_replace <- which(is.na(disk_map[[i]]))
     if(length(to_replace) == 0) next
-    while(length(to_replace) > length(disk_map[[j]][disk_map[[j]] != "."])){
+    while(length(to_replace) > length(disk_map[[j]][!is.na(disk_map[[j]])])){
       j <- j - 1
       disk_map[[j]] <- c(disk_map[[j]],disk_map[[j+1]])
       disk_map[[j+1]] <- NULL
     }
-    disk_map[[j]] <- disk_map[[j]][disk_map[[j]] != "."]
+    disk_map[[j]] <- disk_map[[j]][!is.na(disk_map[[j]])]
     replacement <- rev(tail(disk_map[[j]], length(to_replace)))
-    disk_map[[i]][which(disk_map[[i]] == ".")] <- replacement
+    disk_map[[i]][which(is.na(disk_map[[i]]))] <- replacement
     
     if(i != j){
       disk_map[[j]] <- disk_map[[j]][-((length(disk_map[[j]])-length(replacement)+1):length(disk_map[[j]]))]
@@ -58,26 +58,26 @@ str_split(input, "") %>%
   move_blocks()
 
 move_blocks2 <- function(disk_map){
-    void_lengths <- map(disk_map, \(x) str_extract_all(x, "\\.") %>% unlist() %>% length())
-    file_lengths <- map(disk_map, \(x) x[x != "." & x == x[1]] %>% unlist() %>% length())
-    
+    void_lengths <- map(disk_map, \(x) length(x[is.na(x)]))
+    file_lengths <- map(disk_map, \(x) x[!is.na(x) & x == x[1]] %>% unlist() %>% length())
+
     for(j in length(disk_map):1){
-      print(j)
       how_long_is_this_file <- file_lengths[[j]]
       void_to_fill <- which(void_lengths >= how_long_is_this_file)
       void_to_fill <- void_to_fill[void_to_fill < j][1]
-      voids <- which(disk_map[[void_to_fill]] == ".")
+      voids <- which(is.na(disk_map[[void_to_fill]]))
+      #voids <- which(disk_map[[void_to_fill]] == ".")
       if(length(voids) == 0) next
-      replacement <- disk_map[[j]][disk_map[[j]] != "." & disk_map[[j]] == disk_map[[j]][1]]
+      replacement <- disk_map[[j]][!is.na(disk_map[[j]]) & disk_map[[j]] == disk_map[[j]][1]]
+      #replacement <- disk_map[[j]][disk_map[[j]] != "." & disk_map[[j]] == disk_map[[j]][1]]
       disk_map[[void_to_fill]][voids[1:length(replacement)]] <- replacement
-      disk_map[[j]][disk_map[[j]] == replacement] <- rep(".", length(replacement))
+      #disk_map[[j]][disk_map[[j]] == replacement] <- rep(".", length(replacement))
+      disk_map[[j]][disk_map[[j]] == unique(replacement) & !is.na(disk_map[[j]])] <- rep(NA, length(replacement))
       
-      void_lengths <- map(disk_map, \(x) str_extract_all(x, "\\.") %>% unlist() %>% length())
+      void_lengths <- map(disk_map, \(x) length(x[is.na(x)]))
       
     }
     
-  })
-  
   tibble(disk_map = disk_map %>% unlist() %>% as.numeric(),
          id = 0:(length(disk_map)-1)) %>% 
     mutate(checksum = disk_map*id) %>% 
